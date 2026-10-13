@@ -6,6 +6,7 @@ import { type Form, Message } from '@arco-design/web-vue'
 import { createDocuments, getDocumentsStatus } from '@/services/dataset'
 import { uploadFile } from '@/services/upload-file'
 import { unescapeString } from '@/utils/helper'
+import DocumentStatus from './components/DocumentStatus.vue'
 
 // 1.定义页面逻辑基础数据，涵盖定时器、路由、当前步骤书、表单信息等
 let timer: ReturnType<typeof setTimeout> | null = null
@@ -307,14 +308,20 @@ onUnmounted(() => {
                 <div class="text-gray-500">{{ (document.size / 1024).toFixed(2) }}kb</div>
               </div>
             </div>
-            <!-- 处理的百分比 -->
-            <div v-if="document.status === 'error'" class="text-red-700">
-              处理出错：{{ document.error || '请检查文件内容' }}
-            </div>
-            <div v-else-if="document.status === 'completed'" class="">处理完成</div>
-            <div v-else-if="!document.segment_count" class="text-gray-500">处理中</div>
-            <div v-else class="text-gray-500">
-              {{ ((document.completed_segment_count / document.segment_count) * 100).toFixed(2) }}%
+            <!-- 处理阶段与索引片段进度 -->
+            <div class="flex items-center gap-2">
+              <DocumentStatus :status="document.status" :error="document.error" />
+              <span
+                v-if="document.status === 'indexing' && document.segment_count > 0"
+                class="text-gray-500"
+              >
+                {{
+                  ((document.completed_segment_count / document.segment_count) * 100).toFixed(2)
+                }}%
+              </span>
+              <span v-if="document.status === 'error'" class="text-red-700">
+                {{ document.error || '请检查文件内容' }}
+              </span>
             </div>
           </div>
         </div>

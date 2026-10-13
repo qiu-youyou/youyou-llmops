@@ -1,4 +1,5 @@
-import { onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { isDocumentProcessing } from '@/utils/document-status'
 import { useRoute } from 'vue-router'
 import {
   createDataset,
@@ -197,29 +198,46 @@ export const useGetDocumentsWithPage = (dataset_id: string) => {
     total_record: 0,
   }
   const paginator = reactive({ ...defaultPaginator })
+  const pollingError = ref('')
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let disposed = false
+  let requestId = 0
+  const stopPolling = () => {
+    clearTimeout(timer)
+    timer = undefined
+  }
 
   // 2.加载文档列表数据
-  const loadDocuments = async (init: boolean = false) => {
-    // 2.1 判断是否是初始化与分页器的逻辑
-    if (!init && paginator.current_page > paginator.total_page) return
-
+  const loadDocuments = async (_init: boolean = false, silent: boolean = false) => {
+    if (disposed) return
+    stopPolling()
+    const currentRequest = ++requestId
+    pollingError.value = ''
     try {
       // 2.2 调用接口获取响应数据
-      loading.value = true
+      loading.value = !silent
       const resp = await getDocumentsWithPage(dataset_id, {
         current_page: (route.query?.current_page || 1) as number,
         page_size: (route.query?.page_size || 20) as number,
         search_word: (route.query?.search_word || '') as string,
       })
       const data = resp.data
+      // 翻页或搜索后，忽略旧请求和已卸载页面的结果。
+      if (disposed || currentRequest !== requestId) return
 
       // 2.3 更新分页器
       updatePaginator(data)
 
       // 2.4 对于表格式+分页器实现的分页，可以直接填充数据进行替换
       documents.splice(0, documents.length, ...data.list)
+      if (documents.some((document) => isDocumentProcessing(document.status))) {
+        timer = setTimeout(() => void loadDocuments(false, true), 6000)
+      }
+    } catch (error: unknown) {
+      if (disposed || currentRequest !== requestId) return
+      pollingError.value = error instanceof Error ? error.message : '无法获取文档状态，请重试'
     } finally {
-      loading.value = false
+      if (!disposed && currentRequest === requestId) loading.value = false
     }
   }
   // 3.定义初始化分页器函数
@@ -253,7 +271,12 @@ export const useGetDocumentsWithPage = (dataset_id: string) => {
     },
   )
 
-  return { loading, documents, paginator, loadDocuments }
+  onUnmounted(() => {
+    disposed = true
+    stopPolling()
+  })
+
+  return { loading, documents, paginator, loadDocuments, pollingError }
 }
 
 export const useDeleteDocument = () => {

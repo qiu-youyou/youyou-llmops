@@ -10,6 +10,7 @@ import {
 } from '@/hooks/use-dataset'
 import UpdateDocumentNameModal from '@/views/space/datasets/documents/components/UpdateDocumentNameModal.vue'
 import HitTestingModal from '@/views/space/datasets/documents/components/HitTestingModal.vue'
+import DocumentStatus from './components/DocumentStatus.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,7 +18,7 @@ const hitModalVisible = ref(false)
 const updateDocumentNameModalVisible = ref(false)
 const updateDocumentID = ref('')
 const { dataset, loadDataset } = useGetDataset(route.params?.dataset_id as string)
-const { loading, documents, paginator, loadDocuments } = useGetDocumentsWithPage(
+const { loading, documents, paginator, loadDocuments, pollingError } = useGetDocumentsWithPage(
   route.params?.dataset_id as string,
 )
 const { handleDelete } = useDeleteDocument()
@@ -97,6 +98,10 @@ const { handleUpdate: handleUpdateEnabled } = useUpdateDocumentEnabled()
     </div>
     <!-- 底部表格 -->
     <div class="">
+      <a-alert v-if="pollingError" type="warning" class="mb-4">
+        状态刷新失败：{{ pollingError }}
+        <a-button size="small" :loading="loading" @click="loadDocuments(true)">重新刷新</a-button>
+      </a-alert>
       <!-- 表格内容 -->
       <a-table
         hoverable
@@ -182,20 +187,16 @@ const { handleUpdate: handleUpdateEnabled } = useUpdateDocumentEnabled()
           </a-table-column>
           <a-table-column
             title="状态"
-            data-index="enabled"
+            data-index="status"
             header-cell-class="!bg-gray-200 text-gray-700"
             cell-class="bg-transparent text-gray-700"
           >
             <template #cell="{ record }">
-              <a-space>
-                <div
-                  v-if="record.enabled"
-                  class="w-2 h-2 bg-green-500 rounded-sm border border-green-700"
-                ></div>
-                <div v-else class="w-2 h-2 bg-gray-500 rounded-sm border border-gray-700"></div>
-                <div v-if="record.enabled" class="text-gray-700">可用</div>
-                <div v-else class="text-gray-700">已禁用</div>
-              </a-space>
+              <DocumentStatus
+                :status="record.status"
+                :enabled="record.enabled"
+                :error="record.error"
+              />
             </template>
           </a-table-column>
           <a-table-column
@@ -222,6 +223,7 @@ const { handleUpdate: handleUpdateEnabled } = useUpdateDocumentEnabled()
                   size="small"
                   type="round"
                   :model-value="record.enabled"
+                  :disabled="record.status !== 'completed'"
                   @change="
                     (value) => {
                       handleUpdateEnabled(

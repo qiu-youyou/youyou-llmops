@@ -132,7 +132,8 @@ services:
       AUTHENTICATION_APIKEY_ALLOWED_KEYS: ${WEAVIATE_API_KEY}
       AUTHENTICATION_APIKEY_USERS: 'llmops@test.com' # 基于密钥的API身份列表
       AUTHORIZATION_ADMINLIST_ENABLED: 'true' # Adminlist 授权方案
-      AUTHORIZATION_ADMINLIST_ROOT_USERS: 'llmops@test.com' # Adminlist的身份劣币哦啊
+      AUTHORIZATION_ADMINLIST_ROOT_USERS: 'llmops@test.com' # Adminlist的身份
+      AUTHORIZATION_ADMINLIST_USERS: 'llmops@test.com'
     volumes:
       - ./volumes/weaviate:/var/lib/weaviate
 
