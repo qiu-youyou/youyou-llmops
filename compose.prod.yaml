@@ -99,6 +99,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - '127.0.0.1:15432:5432'
 
   redis:
     image: redis:7-alpine
@@ -117,7 +119,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
+    ports:
+      - '127.0.0.1:16379:6379'
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.34.4
     container_name: ${PROJECT_NAME:-youyou-llmops}-weaviate
@@ -136,10 +139,6 @@ services:
       AUTHORIZATION_ADMINLIST_USERS: 'llmops@test.com'
     volumes:
       - ./volumes/weaviate:/var/lib/weaviate
-
-volumes:
-  postgres_data:
-  redis_data:
-  weaviate_data:
-  api_storage:
-  embeddings_cache:
+    ports:
+      - '127.0.0.1:18080:8080'
+      - '127.0.0.1:50051:50051'
