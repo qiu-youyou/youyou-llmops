@@ -4,8 +4,7 @@ services:
     container_name: ${PROJECT_NAME:-youyou-llmops}-nginx
     restart: unless-stopped
     ports:
-      - '80:80'
-      - '443:443'
+      - '127.0.0.1:9001:80'
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/proxy.conf:/etc/nginx/proxy.conf:ro
@@ -14,7 +13,18 @@ services:
     depends_on:
       - llmops-web
       - llmops-api
-
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: ${PROJECT_NAME:-youyou-llmops}-cloudflared
+    restart: unless-stopped
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - llmops-nginx
   llmops-web:
     image: ${PROJECT_NAME:-youyou-llmops}-web:0.1.0
     build:
