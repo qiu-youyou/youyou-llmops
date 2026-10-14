@@ -156,6 +156,7 @@ def test_services_return_and_save_consistent_usage(
         **{
             key: SimpleNamespace(data=value)
             for key, value in {
+                "image_urls": [],
                 "app_id": app_id,
                 "end_user_id": end_user.id,
                 "conversation_id": conversation.id,
@@ -166,7 +167,7 @@ def test_services_return_and_save_consistent_usage(
     )
     with Flask(__name__).app_context():
         if entry == "debug":
-            response = module.AppService.debug_chat(service, app_id, "问题", account)
+            response = module.AppService.debug_chat(service, app_id, request, account)
         elif entry == "web":
             response = module.WebAppService.web_app_chat(
                 service, "token", request, account
@@ -308,6 +309,7 @@ def test_stream_disconnect_drains_agent_and_persists_terminal_result(
         **{
             key: SimpleNamespace(data=value)
             for key, value in {
+                "image_urls": [],
                 "app_id": app_id,
                 "end_user_id": end_user.id,
                 "conversation_id": conversation.id,
@@ -319,7 +321,7 @@ def test_stream_disconnect_drains_agent_and_persists_terminal_result(
 
     with Flask(__name__).app_context():
         stream = (
-            module.AppService.debug_chat(service, app_id, "问题", account)
+            module.AppService.debug_chat(service, app_id, request, account)
             if entry == "debug"
             else module.OpenApiService.chat(service, request, account)
         )
@@ -399,7 +401,7 @@ def test_assistant_stream_disconnect_drains_and_persists(monkeypatch):
     flask_app.config["ASSISTANT_AGENT_ID"] = uuid4()
     with flask_app.app_context():
         stream = module.AssistantAgentService.assistant_agent_chat(
-            service, "问题", account.id
+            service, SimpleNamespace(query=SimpleNamespace(data="问题"), image_urls=SimpleNamespace(data=[])), account.id
         )
         next(stream)
         stream.close()

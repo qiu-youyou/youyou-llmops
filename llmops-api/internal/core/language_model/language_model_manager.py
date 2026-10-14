@@ -23,6 +23,7 @@ from .entities.provider_entity import Provider, ProviderEntity
 from .entities.model_entity import (
     BaseLanguageModel,
     LanguageModelConfig,
+    ModelEntity,
     ModelParameter,
     ModelParameterType,
     ModelType,
@@ -207,7 +208,14 @@ class LanguageModelManager(BaseModel):
         try:
             return model_class(**init_kwargs)
         except ImportError:
-            raise ValidateErrorException(f"模型提供者{config.provider}缺少可选SDK依赖") from None
+            raise ValidateErrorException(
+                f"模型提供者{config.provider}缺少可选SDK依赖"
+            ) from None
+
+    def get_default_model_entity(self) -> ModelEntity:
+        """读取默认模型目录元数据，不创建 SDK 客户端或发起模型调用。"""
+        config = self._get_system_model_config()
+        return self.get_provider(config["provider"]).get_model_entity(config["model"])
 
     def create_default_language_model(
         self, parameters: Optional[Mapping[str, Any]] = None

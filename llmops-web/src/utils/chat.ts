@@ -2,6 +2,7 @@ import { terminalEvents, type StreamFrame } from './sse'
 export interface ChatMessage {
   id: string
   query: string
+  image_urls?: string[]
   answer: string
   conversation_id?: string
   task_id?: string

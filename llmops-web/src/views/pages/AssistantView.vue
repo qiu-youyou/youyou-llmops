@@ -1,7 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import ChatPanel from '@/components/ChatPanel.vue'
-import { post } from '@/utils/request'
+import { get, post } from '@/utils/request'
+const modelFeatures = ref<string[]>([])
+onMounted(async () => {
+  try {
+    modelFeatures.value = (
+      await get<{ data: { features: string[] } }>('/assistant-agent/capabilities')
+    ).data.features
+  } catch {
+    modelFeatures.value = []
+  }
+})
 const chat = ref<InstanceType<typeof ChatPanel>>()
 async function clear() {
   await post('/assistant-agent/delete-conversation')
@@ -27,6 +37,7 @@ async function clear() {
       opening="你好，我是 Youyou AI 助手。"
       :questions="['帮我规划一个知识库问答应用', '如何设计一个工作流？', '介绍一下 RAG 的工作方式']"
       :suggestions="true"
+      :model-features="modelFeatures"
     />
   </div>
 </template>

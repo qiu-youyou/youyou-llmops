@@ -57,7 +57,7 @@ def test_storage_keeps_snapshots_and_repeated_save_does_not_double_count():
 
     # ORM 保存的 JSON 和历史消息接口都保留精确金额及状态。
     record = SimpleNamespace(id=message.id, conversation_id=conversation.id,
-        query=message.query, answer=message.answer, total_token_count=message.total_token_count,
+        query=message.query, image_urls=[], answer=message.answer, total_token_count=message.total_token_count,
         message_token_count=message.message_token_count, answer_token_count=message.answer_token_count,
         usage=message.usage, latency=0, created_at=datetime(2026, 9, 18), agent_thoughts=[])
     for schema in [GetDebugConversationMessagesWithPageResp(), GetAssistantAgentMessagesWithPageResp()]:

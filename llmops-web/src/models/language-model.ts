@@ -64,3 +64,10 @@ export type GetLanguageModelResponse = BaseResponse<{
     }[]
   }[]
 }>
+
+// Model capabilities use the same names as the backend ModelFeature enum.
+export enum ModelFeature {
+  ToolCall = 'tool_call',
+  AgentThought = 'agent_thought',
+  ImageInput = 'image_input',
+}

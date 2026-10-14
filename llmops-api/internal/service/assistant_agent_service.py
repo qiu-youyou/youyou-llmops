@@ -7,10 +7,12 @@ from flask import current_app
 from injector import inject
 from langchain_classic.tools import BaseTool
 from langchain_community.tools import tool
-from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from sqlalchemy import desc
 
+from internal.core.language_model.entities.model_entity import ModelFeature
+from internal.exception import ValidateErrorException
+from internal.core.language_model.messages import build_human_message
 from internal.core.agent.agents.agent_queue_manager import AgentQueueManager
 from internal.core.agent.agents.function_call_agent import FunctionCallAgent
 from internal.core.agent.entities.agent_entity import AgentConfig
@@ -19,7 +21,7 @@ from internal.core.memory.token_buffer_memory import TokenBufferMemory
 from internal.entity.conversation_entity import InvokeFrom, MessageStatus
 from internal.model.account import Account
 from internal.model.conversation import Message
-from internal.schema.assistant_agent_schema import GetAssistantAgentMessagesWithPageReq
+from internal.schema.assistant_agent_schema import AssistantAgentChat, GetAssistantAgentMessagesWithPageReq
 from internal.task.app_task import auto_create_app
 from pkg.paginator.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
@@ -39,7 +41,12 @@ class AssistantAgentService(BaseService):
     conversation_service: ConversationService
     faiss_service: FaissService
 
-    def assistant_agent_chat(self, query, account_id: UUID):
+    def capabilities(self) -> dict[str, list[str]]:
+        """仅查询默认模型元数据，避免读取能力时初始化模型客户端。"""
+        model = self.language_model_manager.get_default_model_entity()
+        return {"features": model.features}
+
+    def assistant_agent_chat(self, req: AssistantAgentChat, account_id: UUID):
         """辅助智能体对话"""
 
         account = self.get(Account, account_id)
@@ -53,6 +60,9 @@ class AssistantAgentService(BaseService):
         llm = self.language_model_manager.create_default_language_model(
             {"temperature": 0.7}
         )
+
+        if req.image_urls.data and ModelFeature.IMAGE_INPUT not in llm.features:
+            raise ValidateErrorException("当前模型不支持图片输入，请切换支持图片的模型")
 
         # 提取记忆
         token_buffer_memory = TokenBufferMemory(
@@ -85,7 +95,8 @@ class AssistantAgentService(BaseService):
             conversation_id=conversation.id,
             invoke_from=InvokeFrom.ASSISTANT_AGENT,
             created_by=account.id,
-            query=query,
+            query=req.query.data,
+            image_urls=req.image_urls.data,
             status=MessageStatus.NORMAL,
         )
 
@@ -101,7 +112,7 @@ class AssistantAgentService(BaseService):
         return runtime.stream(
             agent,
             {
-                "messages": [HumanMessage(query)],
+                "messages": [build_human_message(req.query.data, req.image_urls.data)],
                 "history": history,
                 "long_term_memory": conversation.summary,
             },

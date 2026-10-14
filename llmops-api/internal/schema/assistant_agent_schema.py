@@ -1,17 +1,15 @@
-from flask_wtf import FlaskForm
 from marshmallow import Schema, fields, pre_dump
-from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired, Optional, NumberRange
+from wtforms import IntegerField
+from wtforms.validators import Optional, NumberRange
 
+from internal.schema.chat_schema import ChatReq
 from internal.lib.helper import datetime_to_timestamp
 from internal.model import Message
 from pkg.paginator import PaginatorReq
 
 
-class AssistantAgentChat(FlaskForm):
+class AssistantAgentChat(ChatReq):
     """辅助智能体会话请求"""
-
-    query = StringField("query", validators=[DataRequired("用户提问query不能为空")])
 
 
 class GetAssistantAgentMessagesWithPageReq(PaginatorReq):
@@ -29,6 +27,7 @@ class GetAssistantAgentMessagesWithPageResp(Schema):
 
     id = fields.UUID(dump_default="")
     conversation_id = fields.UUID(dump_default="")
+    image_urls = fields.List(fields.String(), dump_default=[])
     query = fields.String(dump_default="")
     answer = fields.String(dump_default="")
     total_token_count = fields.Integer(dump_default=0)
@@ -46,6 +45,7 @@ class GetAssistantAgentMessagesWithPageResp(Schema):
             "id": data.id,
             "conversation_id": data.conversation_id,
             "query": data.query,
+            "image_urls": data.image_urls or [],
             "answer": data.answer,
             "total_token_count": data.total_token_count,
             "message_token_count": data.message_token_count,

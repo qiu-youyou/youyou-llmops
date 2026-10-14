@@ -30,6 +30,37 @@ async function copy() {
     <pre class="code-panel">{{ example }}</pre>
     <a-button @click="copy">复制调用示例</a-button>
     <div class="mt-8">
+      <h2>图片输入</h2>
+      <p class="page-description">
+        选择支持图片的模型后，添加 image_urls 数组（最多5张 HTTPS 图片）。纯图片消息可将 query
+        设为空字符串。图片地址需要保持可访问，以支持历史追问。
+      </p>
+      <pre class="code-panel">{{
+        JSON.stringify(
+          {
+            app_id: 'YOUR_APP_ID',
+            query: '对比这两张图片',
+            image_urls: ['https://example.com/a.png', 'https://example.com/b.jpg'],
+            stream: true,
+          },
+          null,
+          2,
+        )
+      }}</pre>
+      <pre class="code-panel">{{
+        JSON.stringify(
+          {
+            app_id: 'YOUR_APP_ID',
+            query: '',
+            image_urls: ['https://example.com/a.png'],
+            stream: true,
+          },
+          null,
+          2,
+        )
+      }}</pre>
+    </div>
+    <div class="mt-8">
       <h2>继续对话与处理结果</h2>
       <p class="page-description">
         多轮对话需要同时传递上次响应的 conversation_id 和 end_user_id。流式响应使用 SSE 格式；收到

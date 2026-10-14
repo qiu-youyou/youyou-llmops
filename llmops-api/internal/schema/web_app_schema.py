@@ -3,6 +3,7 @@ from marshmallow import Schema, fields, pre_dump
 from wtforms import StringField, BooleanField
 from wtforms.validators import DataRequired, Optional, UUID
 
+from internal.schema.chat_schema import ChatReq
 from internal.lib.helper import datetime_to_timestamp
 from internal.model import App, Conversation
 
@@ -32,16 +33,13 @@ class GetWebAppResp(Schema):
         }
 
 
-class WebAppChatReq(FlaskForm):
+class WebAppChatReq(ChatReq):
     """WebApp对话请求结构体"""
 
     conversation_id = StringField(
         "conversation_id",
         default="",
         validators=[Optional(), UUID(message="会话id格式必须为uuid")],
-    )
-    query = StringField(
-        "query", default="", validators=[DataRequired(message="用户提问query不能为空")]
     )
 
 

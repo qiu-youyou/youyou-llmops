@@ -7,12 +7,12 @@
 """
 import uuid
 
-from flask_wtf import FlaskForm
+from internal.schema.chat_schema import ChatReq
 from wtforms import StringField, BooleanField
 from wtforms.validators import DataRequired, UUID, Optional, ValidationError
 
 
-class OpenAPIChatReq(FlaskForm):
+class OpenAPIChatReq(ChatReq):
     """开发API对话结构 请求结构"""
     app_id = StringField('app_id', validators=[
         DataRequired(),
@@ -23,9 +23,6 @@ class OpenAPIChatReq(FlaskForm):
         UUID("end_user_id 格式必须为UUID")
     ])
     conversation_id = StringField("conversation_id", default="")
-    query = StringField("query", default="", validators=[
-        DataRequired("用户提问 query 不能为空"),
-    ])
     stream = BooleanField("stream", default=True)
 
     def validate_conversation_id(self, field: StringField) -> None:

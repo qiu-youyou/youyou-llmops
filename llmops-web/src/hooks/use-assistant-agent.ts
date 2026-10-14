@@ -1,3 +1,4 @@
+import type { ChatRequest } from '@/models/chat'
 import { ref } from 'vue'
 import {
   assistantAgentChat,
@@ -14,12 +15,12 @@ export const useAssistantAgentChat = () => {
 
   // 2.定义辅助Agent会话处理器
   const handleAssistantAgentChat = async (
-    query: string,
+    req: ChatRequest,
     onData: (event_response: Record<string, any>) => void,
   ) => {
     try {
       loading.value = true
-      await assistantAgentChat(query, onData)
+      await assistantAgentChat(req, onData)
     } finally {
       loading.value = false
     }

@@ -1,3 +1,4 @@
+import type { ChatRequest } from '@/models/chat'
 import { appDraftQueueFor } from '@/utils/draft-queue'
 import { get, post, ssePost } from '@/utils/request'
 import type {
@@ -70,12 +71,12 @@ export const updateDebugConversationSummary = (app_id: string, summary: string) 
 // 应用调试对话，该接口为流式事件输出
 export const debugChat = (
   app_id: string,
-  query: string,
+  req: ChatRequest,
   onData: (event_response: Record<string, any>) => void,
 ) => {
   return appDraftQueueFor(app_id)
     .flush()
-    .then(() => ssePost(`/apps/${app_id}/conversations`, { body: { query } }, onData))
+    .then(() => ssePost(`/apps/${app_id}/conversations`, { body: req }, onData))
 }
 
 // 停止某次应用的调试会话

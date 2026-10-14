@@ -1,3 +1,4 @@
+import type { ChatRequest } from '@/models/chat'
 import { onMounted, reactive, ref } from 'vue'
 import {
   cancelPublish,
@@ -492,12 +493,12 @@ export const useDebugChat = () => {
   // 2.定义调试会话处理器
   const handleDebugChat = async (
     app_id: string,
-    query: string,
+    req: ChatRequest,
     onData: (event_response: Record<string, any>) => void,
   ) => {
     try {
       loading.value = true
-      await debugChat(app_id, query, onData)
+      await debugChat(app_id, req, onData)
     } finally {
       loading.value = false
     }

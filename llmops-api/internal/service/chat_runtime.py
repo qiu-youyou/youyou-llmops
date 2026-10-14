@@ -8,6 +8,9 @@ from uuid import uuid4
 
 from flask import current_app
 
+from internal.core.language_model.entities.model_entity import ModelFeature
+from internal.exception import ValidateErrorException
+from internal.schema.chat_schema import ChatReq
 from internal.core.agent.agents import FunctionCallAgent
 from internal.core.agent.entities import AgentConfig
 from internal.core.agent.entities.queue_entity import AgentThought, QueueEvent
@@ -35,9 +38,12 @@ def prepare_app_agent(
     resource_owner_id,
     operator_id,
     invoke_from,
+    req: ChatReq,
 ):
     """资源按应用所有者解析；任务仍绑定发起会话的操作者。"""
     llm = language_model_manager.create_language_model(config["model_config"])
+    if req.image_urls.data and ModelFeature.IMAGE_INPUT not in llm.features:
+        raise ValidateErrorException("当前模型不支持图片输入，请切换支持图片的模型")
     history = TokenBufferMemory(
         db=db, conversation=conversation, model_instance=llm
     ).get_history_prompt_messages(message_limit=config["dialog_round"])

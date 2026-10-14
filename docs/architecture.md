@@ -40,6 +40,8 @@ flowchart LR
 4. 四个会话入口通过 `chat_runtime.ChatRuntime` 消费事件、合并步骤、编码 SSE；终止事件只输出一次，随后关闭 iterator。OpenAPI 保留非流式响应组装。
 5. `ChatRuntime` 捕获标量身份和配置快照，调用 `ConversationService` 在后台 Flask Application Context 中保存；客户端断连则继续排空同一个 iterator 后保存。
 
+聊天图片使用 `query + image_urls`，由公共构造函数转换为多模态 HumanMessage，并保存到 `Message.image_urls`。历史恢复、文本模型占位降级与前端能力查询见 [图片输入契约](contracts/image-input.md)。
+
 四个会话入口共用 SSE 编码和保存收尾，保留各自的鉴权、消息归属、OpenAPI `end_user_id` 字段及非流式响应。应用资源按 `app.account_id` 解析，任务归属仍使用操作者账号。Workflow、AI 辅助功能仍使用各自的事件生成器；没有正式版本化 `StreamEvent`。
 
 当前 Queue 位于进程内。Redis 只保存任务归属和停止标记，不保存流式事件。因此一个 Stream 必须留在启动它的 API 进程中，暂不支持多 Worker 共享、重放和断线恢复。

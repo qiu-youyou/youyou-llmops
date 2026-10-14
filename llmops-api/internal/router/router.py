@@ -482,6 +482,10 @@ class Router:
 
         # 辅助Agent模块
         bp.add_url_rule(
+            "/assistant-agent/capabilities",
+            view_func=self.assistant_agent_handler.capabilities,
+        )
+        bp.add_url_rule(
             "/assistant-agent/chat",
             methods=["POST"],
             view_func=self.assistant_agent_handler.assistant_agent_chat,

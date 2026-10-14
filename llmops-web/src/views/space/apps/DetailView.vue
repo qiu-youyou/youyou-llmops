@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { getLanguageModel } from '@/services/language-model'
 import { post } from '@/utils/request'
 import { useRoute } from 'vue-router'
 import { useGetDraftAppConfig } from '@/hooks/use-app'
@@ -18,6 +19,28 @@ async function clearChat() {
   await chat.value?.reload()
 }
 const { draftAppConfigForm } = useGetDraftAppConfig(id)
+const modelFeatures = ref<string[]>([])
+watch(
+  () => [
+    draftAppConfigForm.value.model_config?.provider,
+    draftAppConfigForm.value.model_config?.model,
+  ],
+  async ([provider, model], _, onCleanup) => {
+    let stale = false
+    onCleanup(() => {
+      stale = true
+    })
+    modelFeatures.value = []
+    if (!provider || !model) return
+    try {
+      const result = await getLanguageModel(provider, model)
+      if (!stale) modelFeatures.value = result.data.features
+    } catch {
+      if (!stale) modelFeatures.value = []
+    }
+  },
+  { immediate: true },
+)
 </script>
 <template>
   <div v-if="draftAppConfigForm.model_config" class="app-editor">
@@ -71,6 +94,7 @@ const { draftAppConfigForm } = useGetDraftAppConfig(id)
         :opening="draftAppConfigForm.opening_statement || '调试你的应用'"
         :questions="draftAppConfigForm.opening_questions"
         :suggestions="draftAppConfigForm.suggested_after_answer.enable"
+        :model-features="modelFeatures"
         draft
       />
     </div>

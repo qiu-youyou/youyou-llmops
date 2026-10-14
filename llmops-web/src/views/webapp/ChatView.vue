@@ -121,6 +121,7 @@ onMounted(load)
         :opening="app.app_config.opening_statement || `你好，我是 ${app.name}`"
         :questions="app.app_config.opening_questions"
         :suggestions="app.app_config.suggested_after_answer?.enable"
+        :model-features="app.app_config.features"
         @conversation="selected = $event"
         @complete="list"
       /><a-spin v-else />

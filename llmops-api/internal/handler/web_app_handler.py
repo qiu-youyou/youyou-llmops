@@ -31,7 +31,9 @@ class WebAppHandler:
         """根据 TOKEN 获取应用"""
         app = self.web_app_service.get_web_app(token)
         resp = GetWebAppResp()
-        return success_json(resp.dump(app))
+        data = resp.dump(app)
+        data["app_config"]["features"] = self.web_app_service.get_model_features(app)
+        return success_json(data)
 
     @login_required
     def web_app_chat(self, token: str):

@@ -371,7 +371,7 @@ class AppHandler:
         req = DebugChatReq()
         if not req.validate():
             return validate_error_json(req.errors)
-        response = self.app_service.debug_chat(app_id, req.query.data, current_user)
+        response = self.app_service.debug_chat(app_id, req, current_user)
         return compact_generate_response(response)
 
     @login_required

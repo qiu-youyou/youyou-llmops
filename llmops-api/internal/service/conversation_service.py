@@ -18,6 +18,7 @@ from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from sqlalchemy import desc
 
+from internal.core.language_model.messages import format_query_for_text_model
 from internal.core.agent.entities.queue_entity import AgentThought, QueueEvent
 from internal.core.agent.usage import (
     merge_agent_thought,
@@ -311,7 +312,7 @@ class ConversationService(BaseService):
                     if app_config["long_term_memory"]["enable"]:
                         try:
                             new_summary = self.summary(
-                                message.query,
+                                format_query_for_text_model(message.query, (message.image_urls or [])),
                                 agent_thought.answer,
                                 conversation.summary,
                             )
@@ -323,9 +324,10 @@ class ConversationService(BaseService):
 
                     # 生成会话名称
                     if conversation.is_new:
-                        new_conversation_name = self.generate_conversation_name(
-                            message.query
-                        )
+                        if not message.query.strip() and message.image_urls:
+                            new_conversation_name = "图片对话"
+                        else:
+                            new_conversation_name = self.generate_conversation_name(message.query)
                         self.update(conversation, name=new_conversation_name)
 
                 # 终止事件不是 AGENT_MESSAGE；放在消息分支外处理。

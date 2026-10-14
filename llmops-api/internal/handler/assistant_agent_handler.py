@@ -28,6 +28,10 @@ class AssistantAgentHandler:
     assistant_agent_service: AssistantAgentService
 
     @login_required
+    def capabilities(self):
+        return success_json(self.assistant_agent_service.capabilities())
+
+    @login_required
     def assistant_agent_chat(self):
         """辅助智能体对话"""
         req = AssistantAgentChat()
@@ -35,7 +39,7 @@ class AssistantAgentHandler:
             return validate_error_json(req.errors)
 
         response = self.assistant_agent_service.assistant_agent_chat(
-            req.query.data, current_user.id
+            req, current_user.id
         )
 
         return compact_generate_response(response)

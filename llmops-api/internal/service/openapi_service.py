@@ -8,8 +8,8 @@
 
 from dataclasses import dataclass
 from injector import inject
-from langchain_core.messages import HumanMessage
 
+from internal.core.language_model.messages import build_human_message
 from internal.core.language_model import LanguageModelManager
 from internal.entity.app_entity import AppStatus
 from internal.entity.conversation_entity import InvokeFrom, MessageStatus
@@ -91,6 +91,7 @@ class OpenApiService(BaseService):
             resource_owner_id=app.account_id,
             operator_id=account.id,
             invoke_from=InvokeFrom.SERVICE_API,
+            req=req,
         )
 
         message = self.create(
@@ -101,12 +102,13 @@ class OpenApiService(BaseService):
                 "invoke_from": InvokeFrom.SERVICE_API,
                 "created_by": end_user.id,
                 "query": req.query.data,
+                "image_urls": req.image_urls.data,
                 "status": MessageStatus.NORMAL,
             },
         )
 
         agent_state = {
-            "messages": [HumanMessage(req.query.data)],
+            "messages": [build_human_message(req.query.data, req.image_urls.data)],
             "long_term_memory": conversation.summary,
             "history": history,
         }
@@ -132,6 +134,7 @@ class OpenApiService(BaseService):
                 "end_user_id": str(end_user.id),
                 "conversation_id": str(conversation.id),
                 "query": req.query.data,
+                "image_urls": req.image_urls.data,
                 "answer": agent_result.answer,
                 "total_token_count": agent_result.total_token_count,
                 "message_token_count": agent_result.message_token_count,

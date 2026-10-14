@@ -11,6 +11,7 @@ from marshmallow import Schema, fields, pre_dump
 from wtforms import StringField, IntegerField
 from wtforms.validators import DataRequired, Length, URL, Optional, NumberRange
 
+from internal.schema.chat_schema import ChatReq
 from internal.entity.app_entity import AppStatus
 from internal.lib.helper import datetime_to_timestamp
 from internal.model import App, AppConfigVersion, Message
@@ -134,11 +135,8 @@ class UpdateDebugConversationSummaryReq(FlaskForm):
     summary = StringField("summary", default="")
 
 
-class DebugChatReq(FlaskForm):
+class DebugChatReq(ChatReq):
     """应用调试会话请求结构体"""
-    query = StringField("query", validators=[
-        DataRequired("用户提问不能为空"),
-    ])
 
 
 class CompletionReq(FlaskForm):
@@ -162,6 +160,7 @@ class GetDebugConversationMessagesWithPageResp(Schema):
     """会话消息列表分页响应结构体"""
     id = fields.UUID(dump_default="")
     conversation_id = fields.UUID(dump_default="")
+    image_urls = fields.List(fields.String(), dump_default=[])
     query = fields.String(dump_default="")
     answer = fields.String(dump_default="")
     total_token_count = fields.Integer(dump_default=0)
@@ -179,6 +178,7 @@ class GetDebugConversationMessagesWithPageResp(Schema):
             "id": data.id,
             "conversation_id": data.conversation_id,
             "query": data.query,
+            "image_urls": data.image_urls or [],
             "answer": data.answer,
             "total_token_count": data.total_token_count,
             "message_token_count": data.message_token_count,

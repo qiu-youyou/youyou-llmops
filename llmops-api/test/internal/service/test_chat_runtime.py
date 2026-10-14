@@ -126,6 +126,7 @@ def test_app_resource_owner_and_task_operator_are_distinct(monkeypatch):
     monkeypatch.setattr(module, "AgentConfig", lambda **kwargs: kwargs)
     with Flask(__name__).app_context():
         agent, _ = module.prepare_app_agent(
+            req=SimpleNamespace(image_urls=SimpleNamespace(data=[])),
             db=MagicMock(),
             language_model_manager=MagicMock(),
             app_config_service=config_service,
@@ -234,14 +235,15 @@ def test_preparation_failure_is_eager_and_does_not_create_message(entry):
     )
     with Flask(__name__).app_context(), pytest.raises(ValueError, match="bad config"):
         if entry == "debug":
-            AppService.debug_chat(service, app.id, "query", account)
+            AppService.debug_chat(service, app.id, SimpleNamespace(image_urls=SimpleNamespace(data=[])), account)
         elif entry == "assistant":
-            AssistantAgentService.assistant_agent_chat(service, "query", account.id)
+            AssistantAgentService.assistant_agent_chat(service, SimpleNamespace(image_urls=SimpleNamespace(data=[])), account.id)
         else:
             req = SimpleNamespace(
                 **{
                     k: SimpleNamespace(data=v)
                     for k, v in {
+                        "image_urls": [],
                         "app_id": app.id,
                         "end_user_id": end_user.id,
                         "conversation_id": uuid4(),

@@ -26,6 +26,7 @@ from langgraph.constants import END
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from internal.core.language_model.messages import extract_message_text
 from internal.core.agent.entities.agent_entity import (
     AgentState,
     AGENT_SYSTEM_PROMPT_TEMPLATE,
@@ -69,7 +70,7 @@ class FunctionCallAgent(BaseAgent):
     def _preset_operation_node(self, state: AgentState) -> AgentState:
         """预设节点：输入审核、数据预处理灯"""
         review_config = self.agent_config.review_config
-        query = state["messages"][-1].content
+        query = extract_message_text(state["messages"][-1].content)
         # 是否开启审核配置
         if review_config["enable"] and review_config["inputs_config"]["enable"]:
             contains_keyword = any(

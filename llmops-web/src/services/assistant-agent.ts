@@ -1,3 +1,4 @@
+import type { ChatRequest } from '@/models/chat'
 import { get, post, ssePost } from '@/utils/request'
 import type { BaseResponse } from '@/models/base'
 import type {
@@ -7,10 +8,10 @@ import type {
 
 // 与辅助Agent进行对话
 export const assistantAgentChat = (
-  query: string,
+  req: ChatRequest,
   onData: (event_response: Record<string, any>) => void,
 ) => {
-  return ssePost(`/assistant-agent/chat`, { body: { query } }, onData)
+  return ssePost(`/assistant-agent/chat`, { body: req }, onData)
 }
 
 // 停止与辅助Agent进行对话

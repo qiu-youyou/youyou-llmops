@@ -15,11 +15,11 @@ from uuid import UUID
 from injector import inject
 from langchain_classic.prompts import ChatPromptTemplate
 from langchain_classic.schema import StrOutputParser
-from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableParallel
 from redis import Redis
 from sqlalchemy import Uuid, func, desc
 
+from internal.core.language_model.messages import build_human_message
 from internal.core.agent.agents import AgentQueueManager
 from internal.core.language_model.entities.model_entity import ModelParameterType
 from internal.core.language_model import LanguageModelManager
@@ -54,6 +54,7 @@ from internal.model import (
 )
 from internal.model.workflow import Workflow
 from internal.schema.app_schema import (
+    DebugChatReq,
     CreateAppReq,
     GetPublishHistoriesWithPageReq,
     GetDebugConversationMessagesWithPageReq,
@@ -469,7 +470,7 @@ class AppService(BaseService):
         self.get_app(app_id, account)
         AgentQueueManager.set_stop_flag(task_id, InvokeFrom.DEBUGGER, account.id)
 
-    def debug_chat(self, app_id: UUID, query: str, account: Account) -> Generator:
+    def debug_chat(self, app_id: UUID, req: DebugChatReq, account: Account) -> Generator:
         """智能体 会话调试"""
 
         # 获取应用信息
@@ -490,6 +491,7 @@ class AppService(BaseService):
             resource_owner_id=app.account_id,
             operator_id=account.id,
             invoke_from=InvokeFrom.DEBUGGER,
+            req=req,
         )
 
         message = self.create(
@@ -498,7 +500,8 @@ class AppService(BaseService):
             conversation_id=debug_conversation.id,
             invoke_from=InvokeFrom.DEBUGGER,
             created_by=account.id,
-            query=query,
+            query=req.query.data,
+            image_urls=req.image_urls.data,
             status=MessageStatus.NORMAL,
         )
 
@@ -513,7 +516,7 @@ class AppService(BaseService):
         return runtime.stream(
             agent,
             {
-                "messages": [HumanMessage(query)],
+                "messages": [build_human_message(req.query.data, req.image_urls.data)],
                 "history": history,
                 "long_term_memory": debug_conversation.summary,
             },

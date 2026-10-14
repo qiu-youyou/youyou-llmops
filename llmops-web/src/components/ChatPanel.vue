@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { get, post, ssePost } from '@/utils/request'
 import { applyChatFrame, usageLabel, type ChatMessage } from '@/utils/chat'
 import { appDraftQueueFor } from '@/utils/draft-queue'
 import { generateSuggestedQuestions } from '@/services/ai'
+import ChatImages from '@/components/ChatImages.vue'
+import { ModelFeature } from '@/models/language-model'
+import {
+  CHAT_IMAGE_TYPES,
+  MAX_IMAGE_FILE_SIZE,
+  MAX_MESSAGE_IMAGES,
+  type ChatRequest,
+} from '@/models/chat'
+import { uploadImage } from '@/services/upload-file'
 import MarkdownContent from '@/components/MarkdownContent.vue'
 const props = withDefaults(
   defineProps<{
@@ -15,8 +24,9 @@ const props = withDefaults(
     questions?: string[]
     suggestions?: boolean
     draft?: boolean
+    modelFeatures?: string[]
   }>(),
-  { opening: '有什么想法？从一个问题开始。', questions: () => [] },
+  { opening: '有什么想法？从一个问题开始。', questions: () => [], modelFeatures: () => [] },
 )
 const emit = defineEmits<{ conversation: [id: string]; complete: [] }>()
 const messages = ref<ChatMessage[]>([]),
@@ -28,6 +38,71 @@ const messages = ref<ChatMessage[]>([]),
   suggested = ref<string[]>([]),
   scroll = ref<HTMLElement>(),
   page = ref(1)
+interface PendingImage {
+  id: number
+  file: File
+  preview: string
+  url?: string
+  uploading: boolean
+  error?: string
+}
+const pendingImages = ref<PendingImage[]>([])
+const fileInput = ref<HTMLInputElement>()
+let nextImageId = 0
+let disposed = false
+const supportsImages = computed(() => props.modelFeatures.includes(ModelFeature.ImageInput))
+const imagesReady = computed(() =>
+  pendingImages.value.every((image) => image.url && !image.uploading && !image.error),
+)
+function canSendMessage(text: string): boolean {
+  if (busy.value || (!text.trim() && pendingImages.value.length === 0)) return false
+  return pendingImages.value.length === 0 || (supportsImages.value && imagesReady.value)
+}
+const canSend = computed(() => canSendMessage(query.value))
+async function uploadPending(item: PendingImage) {
+  item.uploading = true
+  item.error = undefined
+  try {
+    const result = await uploadImage(item.file)
+    const url = result.data.image_url
+    if (!url.startsWith('https://')) throw new Error('图片地址需要使用 HTTPS，请检查上传服务配置')
+    item.url = url
+  } catch (e: any) {
+    item.error = e.message || '图片上传失败'
+  } finally {
+    item.uploading = false
+  }
+}
+function selectImages(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!supportsImages.value || busy.value) {
+    input.value = ''
+    return
+  }
+  for (const file of Array.from(input.files || [])) {
+    if (pendingImages.value.length >= MAX_MESSAGE_IMAGES) {
+      error.value = `每条消息最多${MAX_MESSAGE_IMAGES}张图片`
+      break
+    }
+    if (!CHAT_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_FILE_SIZE) {
+      error.value = '仅支持15 MB以内的 JPEG、PNG、WebP 图片'
+      continue
+    }
+    pendingImages.value.push({
+      id: ++nextImageId,
+      file,
+      preview: URL.createObjectURL(file),
+      uploading: true,
+    })
+    void uploadPending(pendingImages.value[pendingImages.value.length - 1])
+  }
+  input.value = ''
+}
+function removeImage(id: number) {
+  const item = pendingImages.value.find((i) => i.id === id)
+  if (item) URL.revokeObjectURL(item.preview)
+  pendingImages.value = pendingImages.value.filter((i) => i.id !== id)
+}
 let controller: AbortController | undefined
 async function load(reset = true) {
   if (!props.historyEndpoint) return
@@ -58,24 +133,33 @@ async function bottom() {
   scroll.value?.scrollTo({ top: scroll.value.scrollHeight, behavior: 'smooth' })
 }
 async function send(text = query.value) {
-  if (busy.value || !text.trim()) return
+  if (!canSendMessage(text)) return
+  const attachments = pendingImages.value.slice()
+  const imageUrls = attachments.map((image) => image.url!)
+  const req: ChatRequest = { query: text, image_urls: imageUrls }
+  if (props.conversationId) req.conversation_id = props.conversationId
   busy.value = true
   error.value = ''
   suggested.value = []
   controller = new AbortController()
   const index = messages.value.length
-  messages.value.push({ id: '', query: text, answer: '', agent_thoughts: [], status: 'running' })
+  messages.value.push({
+    id: '',
+    query: text,
+    image_urls: imageUrls,
+    answer: '',
+    agent_thoughts: [],
+    status: 'running',
+  })
   query.value = ''
+  pendingImages.value = []
   await bottom()
   try {
     if (props.draft) await appDraftQueueFor(props.endpoint.split('/')[2]).flush()
     await ssePost(
       props.endpoint,
       {
-        body: {
-          query: text,
-          ...(props.conversationId ? { conversation_id: props.conversationId } : {}),
-        },
+        body: req,
         signal: controller.signal,
       },
       (frame) => {
@@ -99,6 +183,12 @@ async function send(text = query.value) {
     messages.value[index].error = e.message
     messages.value[index].status = 'error'
   } finally {
+    if (!disposed && ['error', 'timeout'].includes(messages.value[index].status || '')) {
+      query.value = text
+      pendingImages.value = attachments
+    } else {
+      attachments.forEach((i) => URL.revokeObjectURL(i.preview))
+    }
     busy.value = false
     await bottom()
   }
@@ -123,7 +213,11 @@ watch(
     }
   },
 )
-onBeforeUnmount(() => controller?.abort())
+onBeforeUnmount(() => {
+  disposed = true
+  controller?.abort()
+  pendingImages.value.forEach((i) => URL.revokeObjectURL(i.preview))
+})
 defineExpose({ reload: () => load(), busy })
 </script>
 <template>
@@ -146,7 +240,9 @@ defineExpose({ reload: () => load(), busy })
         </button>
       </div>
       <article v-for="(message, i) in messages" :key="message.id || i" class="chat-turn">
-        <div class="human-bubble">{{ message.query }}</div>
+        <div class="human-bubble">
+          {{ message.query }}<ChatImages :urls="message.image_urls || []" />
+        </div>
         <div class="assistant-answer">
           <div class="answer-label">
             <img src="/favicon.svg" alt="" />Youyou
@@ -155,7 +251,11 @@ defineExpose({ reload: () => load(), busy })
           <MarkdownContent :content="message.answer" />
           <details v-if="message.agent_thoughts?.length">
             <summary>运行过程 · {{ message.agent_thoughts.length }} 个步骤</summary>
-            <div v-for="(step, n) in message.agent_thoughts" :key="step.id || n" class="thought-step">
+            <div
+              v-for="(step, n) in message.agent_thoughts"
+              :key="step.id || n"
+              class="thought-step"
+            >
               <strong>{{ step.tool || step.event }}</strong>
               <pre>{{ step.thought || step.observation }}</pre>
               <small v-if="step.usage">{{ usageLabel(step.usage) }}</small>
@@ -174,6 +274,32 @@ defineExpose({ reload: () => load(), busy })
         <button v-for="q in suggested" :key="q" @click="send(q)">{{ q }}</button>
       </div>
       <form @submit.prevent="send()">
+        <div v-if="pendingImages.length" class="pending-images">
+          <div v-for="item in pendingImages" :key="item.id" class="pending-image">
+            <img :src="item.preview" alt="待发送图片" />
+            <span v-if="item.uploading">上传中…</span>
+            <span v-if="item.error" role="alert">{{ item.error }}</span>
+            <button v-if="item.error" type="button" @click="uploadPending(item)">重试上传</button>
+            <button type="button" :disabled="busy" @click="removeImage(item.id)">移除</button>
+          </div>
+        </div>
+        <p v-if="pendingImages.length && !supportsImages" role="alert">
+          当前模型不支持图片或能力尚未加载，请移除图片或切换模型。
+        </p>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          hidden
+          @change="selectImages"
+        />
+        <a-button
+          type="text"
+          :disabled="!supportsImages || busy || pendingImages.length >= MAX_MESSAGE_IMAGES"
+          @click="fileInput?.click()"
+          >添加图片</a-button
+        >
         <textarea
           v-model="query"
           aria-label="输入消息"
@@ -192,7 +318,7 @@ defineExpose({ reload: () => load(), busy })
         <div class="composer-footer">
           <small>{{ busy ? '正在生成，你可以随时停止' : '回答由 AI 生成，请核实重要信息' }}</small
           ><a-button v-if="busy" @click="stop">停止</a-button
-          ><a-button v-else type="primary" html-type="submit" :disabled="!query.trim()"
+          ><a-button v-else type="primary" html-type="submit" :disabled="!canSend"
             ><icon-arrow-up
           /></a-button>
         </div>
@@ -201,6 +327,28 @@ defineExpose({ reload: () => load(), busy })
   </section>
 </template>
 <style scoped>
+.pending-images {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pending-image {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 104px;
+  font-size: 12px;
+}
+.pending-image img {
+  width: 104px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.pending-image button {
+  color: #49725a;
+}
+
 .chat-panel {
   height: 100%;
   min-height: 480px;

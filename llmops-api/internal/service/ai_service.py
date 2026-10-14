@@ -15,6 +15,7 @@ from injector import inject
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
+from internal.core.language_model.messages import format_query_for_text_model
 from internal.core.language_model import LanguageModelManager
 from internal.entity.ai_entity import OPTIMIZE_PROMPT_TEMPLATE
 from internal.exception import ForbiddenException
@@ -56,5 +57,5 @@ class AIService(BaseService):
         if not message or message.created_by != account.id:
             raise ForbiddenException("消息不存在或无权限")
         # 构建对话 生成建议问题
-        histories = f"Human: {message.query}\nAI:{message.answer}"
+        histories = f"Human: {format_query_for_text_model(message.query, (message.image_urls or []))}\nAI:{message.answer}"
         return self.conversation_service.generate_suggested_questions(histories)

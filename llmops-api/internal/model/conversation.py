@@ -77,6 +77,7 @@ class Message(db.Model):
     created_by = Column(UUID, nullable=False)  # 消息的创建来源，有可能是LLMOps的用户，也有可能是开放API的终端用户
 
     # 消息关联的原始问题
+    image_urls = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"), default=list)
     query = Column(Text, nullable=False, server_default=text("''::text"))  # 用户提问的原始query
     message = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))  # 产生answer的消息列表
     message_token_count = Column(Integer, nullable=False, server_default=text("0"))  # 消息列表的token总数

@@ -23,6 +23,7 @@ class GetConversationMessagesWithPageResp(Schema):
 
     id = fields.UUID(dump_default="")
     conversation_id = fields.UUID(dump_default="")
+    image_urls = fields.List(fields.String(), dump_default=[])
     query = fields.String(dump_default="")
     answer = fields.String(dump_default="")
     total_token_count = fields.Integer(dump_default=0)
@@ -36,6 +37,7 @@ class GetConversationMessagesWithPageResp(Schema):
             "id": data.id,
             "conversation_id": data.conversation_id,
             "query": data.query,
+            "image_urls": data.image_urls or [],
             "answer": data.answer,
             "total_token_count": data.total_token_count,
             "latency": data.latency,

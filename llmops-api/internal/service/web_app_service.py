@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from typing import Generator
 
 from injector import inject
-from langchain_core.messages import HumanMessage
 from sqlalchemy import desc
 from werkzeug.exceptions import FailedDependency
 
+from internal.core.language_model.messages import build_human_message
 from internal.core.agent.agents.agent_queue_manager import AgentQueueManager
 from internal.entity.app_entity import AppStatus
 from internal.entity.conversation_entity import InvokeFrom, MessageStatus
@@ -45,6 +45,14 @@ class WebAppService(BaseService):
 
         return app
 
+    def get_model_features(self, app: App) -> list[str]:
+        """返回已发布模型的能力，前端和运行时使用同一个模型目录。"""
+        config = self.app_config_service.get_app_config(app)
+        model_config = config["model_config"]
+        provider = self.language_model_manager.get_provider(model_config["provider"])
+        model = provider.get_model_entity(model_config["model"])
+        return model.features
+
     def web_app_chat(
         self, token: str, req: WebAppChatReq, account: Account
     ) -> Generator:
@@ -77,6 +85,7 @@ class WebAppService(BaseService):
             resource_owner_id=app.account_id,
             operator_id=account.id,
             invoke_from=InvokeFrom.WEB_APP,
+            req=req,
         )
 
         # 运行所需的配置、模型和工具已就绪后，再创建会话与待保存的消息。
@@ -95,6 +104,7 @@ class WebAppService(BaseService):
             invoke_from=InvokeFrom.WEB_APP,
             created_by=account.id,
             query=req.query.data,
+            image_urls=req.image_urls.data,
             status=MessageStatus.NORMAL,
         )
 
@@ -109,7 +119,7 @@ class WebAppService(BaseService):
         return runtime.stream(
             agent,
             {
-                "messages": [HumanMessage(req.query.data)],
+                "messages": [build_human_message(req.query.data, req.image_urls.data)],
                 "history": history,
                 "long_term_memory": conversation.summary,
             },
