@@ -272,7 +272,7 @@ class AppHandler:
                             {
                                 "id": gid,
                                 "event": "agent_thought",
-                                "data": json.dumps(chunk.tool_call_chunks),
+                                "data": json.dumps(chunk.tool_call_chunks, ensure_ascii=False),
                             }
                         )
                     else:
@@ -298,7 +298,7 @@ class AppHandler:
                     message.append(
                         ToolMessage(
                             tool_call_id=tool_call["id"],
-                            content=json.dumps(tool_result),
+                            content=json.dumps(tool_result, ensure_ascii=False),
                             tool_name=tool_call["name"],
                         )
                     )
@@ -306,7 +306,7 @@ class AppHandler:
                         {
                             "id": tid,
                             "event": "agent_action",
-                            "data": json.dumps(tool_result),
+                            "data": json.dumps(tool_result, ensure_ascii=False),
                         }
                     )
 

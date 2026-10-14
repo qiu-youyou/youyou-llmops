@@ -101,8 +101,10 @@ class RetrievalService(BaseService):
             account_id,
         )
         lc_documents = [
-            item for item in lc_documents
-            if item.metadata.get("segment_id") in visible_segments
+            item
+            for item in lc_documents
+            if str(item.metadata.get("segment_id")) in visible_segments
+            # if item.metadata.get("segment_id") in visible_segments
         ]
 
         # 知识库查询记录 存储唯一记录

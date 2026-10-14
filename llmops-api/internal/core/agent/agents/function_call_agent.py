@@ -136,7 +136,7 @@ class FunctionCallAgent(BaseAgent):
                     state["task_id"], "智能体历史消息格式错误"
                 )
                 logging.error(
-                    f"智能体历史消息列表格式错误，history={json.dumps(messages_to_dict(history))}"
+                    f"智能体历史消息列表格式错误，history={json.dumps(messages_to_dict(history), ensure_ascii=False)}"
                 )
                 raise FailException("历史消息列表格式错误")
             preset_prompt.extend(history)
@@ -289,7 +289,7 @@ class FunctionCallAgent(BaseAgent):
                     id=id,
                     task_id=state["task_id"],
                     event=QueueEvent.AGENT_THOUGHT,
-                    thought=json.dumps(gathered.tool_calls),
+                    thought=json.dumps(gathered.tool_calls, ensure_ascii=False),
                     message=messages_to_dict(state["messages"]),
                     usage=usage,
                     **usage.legacy_fields(),
@@ -347,7 +347,7 @@ class FunctionCallAgent(BaseAgent):
                 ToolMessage(
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
-                    content=json.dumps(tool_result),
+                    content=json.dumps(tool_result, ensure_ascii=False),
                 )
             )
 
@@ -363,7 +363,7 @@ class FunctionCallAgent(BaseAgent):
                     id=id,
                     task_id=state["task_id"],
                     event=event,
-                    observation=json.dumps(tool_result),
+                    observation=json.dumps(tool_result, ensure_ascii=False),
                     tool=tool_call["name"],
                     tool_input=tool_call["args"],
                     latency=(time.perf_counter() - start_at),

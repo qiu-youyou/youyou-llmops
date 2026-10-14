@@ -85,7 +85,7 @@ class ToolNode(BaseNode):
         except Exception as e:
             raise FailException("扩展插件执行失败，请稍后尝试")
         if not isinstance(result, str):
-            result = json.dumps(result)
+            result = json.dumps(result, ensure_ascii=False)
 
         # 组装输出结构
         outputs = {}
