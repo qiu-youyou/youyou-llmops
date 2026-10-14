@@ -4,6 +4,7 @@ import { get, post, ssePost } from '@/utils/request'
 import { applyChatFrame, usageLabel, type ChatMessage } from '@/utils/chat'
 import { appDraftQueueFor } from '@/utils/draft-queue'
 import { generateSuggestedQuestions } from '@/services/ai'
+import MarkdownContent from '@/components/MarkdownContent.vue'
 const props = withDefaults(
   defineProps<{
     endpoint: string
@@ -151,7 +152,7 @@ defineExpose({ reload: () => load(), busy })
             <img src="/favicon.svg" alt="" />Youyou
             <span v-if="message.status === 'running'">正在运行…</span>
           </div>
-          <p class="answer-text">{{ message.answer }}</p>
+          <MarkdownContent :content="message.answer" />
           <details v-if="message.agent_thoughts?.length">
             <summary>运行过程 · {{ message.agent_thoughts.length }} 个步骤</summary>
             <div v-for="(step, n) in message.agent_thoughts" :key="step.id || n" class="thought-step">
@@ -274,11 +275,6 @@ defineExpose({ reload: () => load(), busy })
 .answer-label span {
   margin-left: auto;
   letter-spacing: 0;
-}
-.answer-text {
-  white-space: pre-wrap;
-  line-height: 1.9;
-  overflow-wrap: anywhere;
 }
 .usage-label {
   display: block;

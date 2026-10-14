@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type PropType } from 'vue'
 import DotFlashing from '@/components/DotFlashing.vue'
+import MarkdownContent from '@/components/MarkdownContent.vue'
 import AgentThought from './AgentThought.vue'
 
 // 1.定义自定义组件所需数据
@@ -35,21 +36,19 @@ const emits = defineEmits(['selectSuggestedQuestion'])
       <icon-apps />
     </a-avatar>
     <!-- 右侧名称与消息 -->
-    <div class="flex flex-col items-start gap-2">
+    <div class="flex min-w-0 flex-1 flex-col items-start gap-2">
       <!-- 应用名称 -->
       <div class="text-gray-700 font-bold">{{ props.app?.name }}</div>
       <!-- 推理步骤 -->
       <agent-thought :agent_thoughts="props.agent_thoughts" :loading="props.loading" />
       <!-- AI消息 -->
       <div
-        :class="`${props.message_class} border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl break-all`"
+        :class="`${props.message_class} min-w-0 max-w-full border border-gray-200 text-gray-700 px-4 py-3 rounded-2xl`"
       >
         <template v-if="props.loading && props.answer.trim() === ''">
           <dot-flashing />
         </template>
-        <template v-else>
-          {{ props.answer }}
-        </template>
+        <markdown-content v-else :content="props.answer" />
       </div>
       <!-- 消息展示与操作 -->
       <div class="flex items-center justify-between">
