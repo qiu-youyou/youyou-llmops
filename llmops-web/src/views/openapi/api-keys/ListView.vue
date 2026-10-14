@@ -70,7 +70,7 @@ watch(
 </script>
 
 <template>
-  <div class="h-[calc(100vh-160px)] overflow-scroll scrollbar-w-none">
+  <div>
     <a-table
       hoverable
       :pagination="{

@@ -88,6 +88,12 @@ onMounted(load)
 <style scoped>
 .app-layout {
   height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
   overflow: auto;
+}
+.editor-header {
+  flex-shrink: 0;
 }
 </style>

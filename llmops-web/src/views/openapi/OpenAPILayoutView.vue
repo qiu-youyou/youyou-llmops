@@ -7,9 +7,8 @@ const create_api_key = ref(false)
 </script>
 
 <template>
-  <!-- 调整边距+隐藏 -->
-  <div class="px-6 flex flex-col overflow-hidden h-full">
-    <div class="pt-6 sticky top-0 z-20 bg-gray-50">
+  <div class="px-6 flex flex-col overflow-hidden h-full min-h-0">
+    <div class="pt-6 shrink-0 z-20 bg-gray-50">
       <!-- 顶层标题+创建按钮 -->
       <div class="flex items-center justify-between mb-6">
         <!-- 左侧标题 -->
@@ -54,7 +53,9 @@ const create_api_key = ref(false)
       </div>
     </div>
     <!-- 中间内容 -->
-    <router-view v-model:create_api_key="create_api_key" />
+    <div class="openapi-content flex-1 min-h-0 overflow-auto pb-6">
+      <router-view v-model:create_api_key="create_api_key" />
+    </div>
   </div>
 </template>
 

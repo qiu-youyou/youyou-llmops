@@ -576,7 +576,9 @@ pre {
 .app-editor {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 42%);
-  height: calc(100vh - 77px);
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
 }
 .app-config {
   min-width: 0;
@@ -600,6 +602,7 @@ pre {
 .app-preview {
   border-left: 1px solid #e3e8eb;
   min-width: 0;
+  min-height: 0;
   background: white;
 }
 .sidebar-mask {
@@ -630,7 +633,6 @@ pre {
     justify-content: center;
   }
   .app-editor {
-    height: calc(100vh - 126px);
     grid-template-columns: minmax(0, 1fr) minmax(320px, 45%);
   }
 }
@@ -724,7 +726,7 @@ pre {
   }
   .app-editor {
     display: block;
-    height: auto;
+    flex: none;
   }
   .app-config {
     padding: 12px;

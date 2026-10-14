@@ -104,6 +104,10 @@ watch(
 .app-preview {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+.app-preview > :not(.chat-panel) {
+  flex-shrink: 0;
 }
 .app-preview :deep(.chat-panel) {
   flex: 1;
@@ -123,7 +127,7 @@ watch(
 }
 @media (max-width: 767px) {
   .app-preview {
-    height: 650px;
+    height: min(650px, 100dvh);
   }
 }
 </style>
