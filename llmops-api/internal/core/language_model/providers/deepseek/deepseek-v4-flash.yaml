@@ -4,6 +4,7 @@ model_type: chat
 features:
   - tool_call
   - agent_thought
+  - image_input
 context_window: 1048576
 max_output_tokens: 393216
 attributes:

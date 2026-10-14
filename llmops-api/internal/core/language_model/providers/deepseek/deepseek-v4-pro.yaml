@@ -4,6 +4,7 @@ model_type: chat
 features:
   - tool_call
   - agent_thought
+  - image_input
 context_window: 1048576
 max_output_tokens: 393216
 attributes:
@@ -25,11 +26,11 @@ parameters:
     max: 393216
 metadata:
   pricing:
-    input: "9"
-    output: "27"
-    cache_read: "0.30"
-    unit: "0.000001"
+    input: '9'
+    output: '27'
+    cache_read: '0.30'
+    unit: '0.000001'
     currency: CNY
     schedule: deepseek_peak
     source: https://api-docs.deepseek.com/zh-cn/quick_start/pricing/
-    checked_at: "2026-09-18"
+    checked_at: '2026-09-18'

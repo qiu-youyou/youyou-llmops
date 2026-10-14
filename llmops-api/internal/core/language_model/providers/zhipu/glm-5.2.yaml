@@ -4,6 +4,7 @@ model_type: chat
 features:
   - tool_call
   - agent_thought
+  - image_input
 context_window: 1048576
 max_output_tokens: 131072
 attributes:
@@ -25,11 +26,11 @@ parameters:
     max: 131072
 metadata:
   pricing:
-    input: "8"
-    output: "28"
-    cache_read: "2"
-    unit: "0.000001"
+    input: '8'
+    output: '28'
+    cache_read: '2'
+    unit: '0.000001'
     currency: CNY
     schedule: flat
     source: https://docs.bigmodel.cn/cn/guide/start/pricing
-    checked_at: "2026-09-18"
+    checked_at: '2026-09-18'
