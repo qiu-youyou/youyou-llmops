@@ -298,7 +298,7 @@ watch(form, () => emits('dirty', JSON.stringify(form.value) !== committedForm), 
   <div
     v-if="props.visible"
     id="llm-node-info"
-    class="absolute top-0 right-0 bottom-0 w-[400px] border-l z-50 bg-white overflow-scroll scrollbar-w-none p-3"
+    class="absolute top-0 right-0 bottom-0 w-[700px] border-l z-50 bg-white overflow-scroll scrollbar-w-none p-3"
   >
     <!-- 顶部标题信息 -->
     <div class="flex items-center justify-between gap-3 mb-2">

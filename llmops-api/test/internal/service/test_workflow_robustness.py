@@ -126,5 +126,6 @@ def test_workflow_debug_failure_persists_failed_result_resets_publish_gate_and_e
 
     assert frames[-1].startswith("event: workflow\n")
     assert '"status": "failed"' in frames[-1]
+    assert "工作流执行失败" in frames[-1]
     assert (workflow, {"is_debug_passed": False}) in updates
     assert any(values.get("status") == "failed" for _, values in updates)

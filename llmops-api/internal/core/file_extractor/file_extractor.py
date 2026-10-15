@@ -11,6 +11,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
+from urllib.parse import unquote, urlsplit
 
 import requests
 from injector import inject
@@ -22,6 +23,7 @@ from langchain_community.document_loaders import (
     UnstructuredCSVLoader,
     UnstructuredPowerPointLoader,
     UnstructuredXMLLoader,
+    UnstructuredWordDocumentLoader,
     UnstructuredFileLoader,
     TextLoader,
 )
@@ -64,7 +66,8 @@ class FileExtractor:
         # 2.将文件下载到本地的临时文件夹
         with tempfile.TemporaryDirectory() as temp_dir:
             # 3.获取文件的扩展名，并构建临时存储路径，将远程文件存储到本地
-            file_path = os.path.join(temp_dir, os.path.basename(url))
+            filename = os.path.basename(unquote(urlsplit(url).path)) or "document"
+            file_path = os.path.join(temp_dir, filename)
             with open(file_path, "wb") as file:
                 file.write(response.content)
 
@@ -83,7 +86,10 @@ class FileExtractor:
         file_extension = Path(file_path).suffix.lower()
 
         # 2.根据不同的文件扩展名去加载不同的加载器
-        if file_extension in [".xlsx", ".xls"]:
+        if file_extension == ".txt":
+            # 纯文本按原文读取，避免 JSON 格式的文本被重新序列化为 Unicode 转义。
+            loader = TextLoader(file_path, encoding="utf-8", autodetect_encoding=True)
+        elif file_extension in [".xlsx", ".xls"]:
             loader = UnstructuredExcelLoader(file_path)
         elif file_extension == ".pdf":
             loader = UnstructuredPDFLoader(file_path)
@@ -93,7 +99,9 @@ class FileExtractor:
             loader = UnstructuredHTMLLoader(file_path)
         elif file_extension == ".csv":
             loader = UnstructuredCSVLoader(file_path)
-        elif file_extension in [".ppt", "pptx"]:
+        elif file_extension in [".doc", ".docx"]:
+            loader = UnstructuredWordDocumentLoader(file_path)
+        elif file_extension in [".ppt", ".pptx"]:
             loader = UnstructuredPowerPointLoader(file_path)
         elif file_extension == ".xml":
             loader = UnstructuredXMLLoader(file_path)
@@ -101,4 +109,4 @@ class FileExtractor:
             loader = UnstructuredFileLoader(file_path) if is_unstructured else TextLoader(file_path)
         docs = loader.load()
         # 3.返回加载的文档列表或者文本
-        return delimiter.join([document.page_content for document in loader.load()]) if return_text else loader.load()
+        return delimiter.join([document.page_content for document in docs]) if return_text else docs

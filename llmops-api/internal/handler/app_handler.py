@@ -346,12 +346,12 @@ class AppHandler:
                 try:
                     item = q.get(timeout=600)
                 except Empty:
-                    yield f"event: timeout\ndata: {json.dumps({'event': 'timeout'})}\n\n"
+                    yield f"event: timeout\ndata: {json.dumps({'event': 'timeout'}, ensure_ascii=False)}\n\n"
                     return
                 if item is None:
                     return
                 # 此旧接口写入队列的是字符串事件名，不能再取 .value。
-                yield f"event: {item.get('event')}\ndata: {json.dumps(item)}\n\n"
+                yield f"event: {item.get('event')}\ndata: {json.dumps(item, ensure_ascii=False)}\n\n"
                 q.task_done()
 
         t = Thread(target=graph_app)

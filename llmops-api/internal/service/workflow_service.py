@@ -294,7 +294,7 @@ class WorkflowService(BaseService):
 
                     # 组装响应数据并流式事件输出
                     data = {"id": str(uuid.uuid4()), **node_result_dict}
-                    yield f"event: workflow\ndata: {json.dumps(data)}\n\n"
+                    yield f"event: workflow\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
                 # 流式输出完毕后，将结果存储到数据库中
                 self.update(
@@ -323,7 +323,7 @@ class WorkflowService(BaseService):
                     "status": "failed",
                     "error": "工作流执行失败",
                 }
-                yield f"event: workflow\ndata: {json.dumps(data)}\n\n"
+                yield f"event: workflow\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
         return handle_stream()
 

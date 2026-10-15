@@ -43,6 +43,9 @@ class Http(Flask):
         # 初始化配置
         self.config.from_object(conf)
 
+        # JSON 响应直接输出中文，便于查看和调试
+        self.json.ensure_ascii = False
+
         # 自定义异常错误
         self.register_error_handler(Exception, self._register_error_handler)
 

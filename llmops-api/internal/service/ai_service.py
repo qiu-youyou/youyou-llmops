@@ -47,7 +47,7 @@ class AIService(BaseService):
         # 调用流事件返回
         for chunk in chain.stream({"prompt": prompt}):
             data = {"optimize_prompt": chunk}
-            yield f"event: optimize_prompt\ndata: {json.dumps(data)}\n\n"
+            yield f"event: optimize_prompt\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
     def generate_suggested_questions_from_message_id(
         self, message_id: UUID, account: Account

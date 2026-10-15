@@ -103,7 +103,7 @@ watch(
 <template>
   <div
     v-if="props.visible"
-    class="absolute right-0 left-0 bottom-0 h-[42vh] bg-white z-50 border-t overflow-scroll scrollbar-w-none p-4"
+    class="absolute right-0 left-0 bottom-0 h-[55vh] bg-white z-50 border-t overflow-scroll scrollbar-w-none p-4"
   >
     <!-- 调试面板标题 -->
     <div class="flex items-center justify-between mb-2">

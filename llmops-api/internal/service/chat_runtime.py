@@ -191,7 +191,7 @@ class ChatRuntime:
                     }
                     if thought.event in TERMINAL_EVENTS:
                         finish()
-                    yield f"event: {thought.event.value}\n{self.data_prefix}{json.dumps(data)}\n\n"
+                    yield f"event: {thought.event.value}\n{self.data_prefix}{json.dumps(data, ensure_ascii=False)}\n\n"
                     if finished:
                         return
             finally:

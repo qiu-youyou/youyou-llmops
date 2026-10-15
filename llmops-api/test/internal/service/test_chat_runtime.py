@@ -58,6 +58,8 @@ def test_terminal_stops_consumption_and_saves_once(runtime, terminal, disconnect
 
     stream = runner.stream(SimpleNamespace(stream=lambda _: source()), {})
     first = next(stream)
+    assert "部分答案" in first
+    assert json.loads(first.split("data:", 1)[1])["answer"] == "部分答案"
     if disconnect:
         stream.close()
     else:

@@ -16,6 +16,8 @@ data: {"event":"agent_message","id":"...","conversation_id":"...","message_id":"
 
 ## 公共字段
 
+SSE 的 JSON 数据使用 `ensure_ascii=False`，直接输出中文；聊天、工作流、提示词优化及调试事件遵循相同规则。引号、反斜杠和换行仍由 JSON 编码器转义，客户端继续按 JSON 解析一次。此设置只改变传输文本的可读性，不改变事件名、字段或终止行为，也不会解码正文中原本存在的字面量 `\uXXXX`。
+
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
 | `id` | UUID | 稳定的事件/步骤标识；同一回答步骤的 Token Chunk 共用该值。 |
