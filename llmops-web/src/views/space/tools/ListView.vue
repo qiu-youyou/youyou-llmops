@@ -49,12 +49,95 @@ const schemaError = ref('')
 const validatedSchema = ref('')
 const tools = computed(() => parseApiToolSchema(form.openapi_schema).tools)
 
+const showSchemaGuide = ref(false)
+const schemaExampleType = ref<'get' | 'post'>('get')
+// 示例使用与后端一致的简化格式，仅供复制，不写入用户表单。
+const schemaExamples = {
+  get: {
+    server: 'https://api.example.com',
+    description: '查询商品信息（请替换为实际服务地址）。',
+    paths: {
+      '/products': {
+        get: {
+          operationId: 'search_products',
+          description: '根据关键词搜索商品。',
+          parameters: [
+            { name: 'query', in: 'query', description: '商品关键词', required: true, type: 'str' },
+            {
+              name: 'limit',
+              in: 'query',
+              description: '返回数量，可省略',
+              required: false,
+              type: 'int',
+            },
+          ],
+        },
+      },
+    },
+  },
+  post: {
+    server: 'https://api.bocha.cn',
+    description: '博查联网搜索，返回网页标题、链接和摘要。',
+    paths: {
+      '/v1/web-search': {
+        post: {
+          operationId: 'bocha_web_search',
+          description: '搜索实时网页信息。通常传入 summary=true、count=5、freshness=noLimit。',
+          parameters: [
+            {
+              name: 'query',
+              in: 'request_body',
+              description: '搜索关键词或问题',
+              required: true,
+              type: 'str',
+            },
+            {
+              name: 'summary',
+              in: 'request_body',
+              description: '是否返回较长摘要，通常为 true',
+              required: true,
+              type: 'bool',
+            },
+            {
+              name: 'count',
+              in: 'request_body',
+              description: '结果数量，1 到 50，通常为 5',
+              required: true,
+              type: 'int',
+            },
+            {
+              name: 'freshness',
+              in: 'request_body',
+              description: 'noLimit、oneDay、oneWeek、oneMonth 或 oneYear',
+              required: true,
+              type: 'str',
+            },
+          ],
+        },
+      },
+    },
+  },
+}
+const schemaExample = computed(() =>
+  JSON.stringify(schemaExamples[schemaExampleType.value], null, 2),
+)
+const copySchemaExample = async () => {
+  try {
+    await navigator.clipboard.writeText(schemaExample.value)
+    Message.success('示例已复制，可粘贴到 Schema 输入框后修改')
+  } catch {
+    Message.warning('无法访问剪贴板，请选中下方示例手动复制')
+  }
+}
+
 const resetForm = () => {
   formRef.value?.resetFields()
   Object.assign(form, emptyForm())
   schemaError.value = ''
   validatedSchema.value = ''
   editingProviderId.value = ''
+  showSchemaGuide.value = false
+  schemaExampleType.value = 'get'
 }
 const loadMoreData = () => loadApiToolProviders(false, String(route.query.search_word ?? ''))
 const initData = () => {
@@ -271,7 +354,7 @@ watch(() => route.query.search_word, initData)
     <!-- 卡片抽屉 -->
     <a-drawer
       :visible="!!selectedProvider"
-      :width="350"
+      :width="650"
       :footer="false"
       title="工具详情"
       :drawer-style="{ background: '#F9FAFB' }"
@@ -355,7 +438,7 @@ watch(() => route.query.search_word, initData)
     </a-drawer>
     <!-- 新建/修改模态窗 -->
     <a-modal
-      :width="630"
+      :width="830"
       :visible="props.createType === 'tool' || showUpdateModal"
       hide-title
       :mask-closable="!submitLoading"
@@ -438,7 +521,7 @@ watch(() => route.query.search_word, initData)
             :validate-status="schemaError ? 'error' : undefined"
             :help="
               schemaError ||
-              '使用 server、description、paths 格式；支持 GET/POST，参数类型为 str/int/float/bool。'
+              '使用本项目简化的 JSON Schema。鉴权信息请填写到下方 Headers，可查看填写规则与示例。'
             "
             asterisk-position="end"
             :rules="[
@@ -449,12 +532,102 @@ watch(() => route.query.search_word, initData)
               },
             ]"
           >
-            <a-textarea
-              v-model="form.openapi_schema"
-              :auto-size="{ minRows: 4, maxRows: 6 }"
-              placeholder="在此处输入您的 OpenAPI Schema"
-              @blur="validateSchema()"
-            />
+            <div class="w-full min-w-0">
+              <a-button
+                type="text"
+                size="small"
+                html-type="button"
+                class="mb-2"
+                :aria-expanded="showSchemaGuide"
+                aria-controls="api-tool-schema-guide"
+                @click="showSchemaGuide = !showSchemaGuide"
+              >
+                {{ showSchemaGuide ? '收起规则与示例' : '填写规则与示例' }}
+              </a-button>
+              <div
+                v-if="showSchemaGuide"
+                id="api-tool-schema-guide"
+                class="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 leading-6"
+              >
+                <p class="font-medium text-gray-800">
+                  使用 JSON 格式，本项目仅支持简化规范，不支持完整 OpenAPI 3.0。
+                </p>
+                <ul class="list-disc pl-4 my-2">
+                  <li>
+                    <code>server</code>：HTTP/HTTPS
+                    服务基础地址；<code>description</code>：工具提供者描述，均必填。
+                  </li>
+                  <li>
+                    <code>paths</code>：至少包含一个接口，路径以 / 开头，方法使用小写
+                    <code>get</code> 或 <code>post</code>。
+                  </li>
+                  <li>
+                    每个接口填写 <code>operationId</code>（整个 Schema 内唯一的工具名称）和
+                    <code>description</code>（工具用途）。
+                  </li>
+                  <li>
+                    <code>parameters</code> 为参数数组，无参数时可省略或填写
+                    []；同一接口内参数名称不能重复。
+                  </li>
+                  <li>
+                    每个参数必须包含
+                    <code>name</code
+                    >、<code>in</code>、<code>description</code>、<code>required</code>、<code>type</code>。
+                  </li>
+                  <li>
+                    <code>type</code> 支持 str / int / float / bool；<code>required</code> 填 true
+                    或 false，不加引号。
+                  </li>
+                  <li>
+                    <code>in</code> 支持 query（网址查询参数）、request_body（JSON
+                    请求体）、path（路径）、header（请求头）、cookie。
+                  </li>
+                  <li>
+                    路径参数如 /products/{id}，必须定义同名的 path 参数，并设置 required 为 true。
+                  </li>
+                  <li>
+                    不支持 default
+                    默认值、嵌套对象或数组类型。描述中的建议值不会自动填入，省略可选参数时不会发送该参数。
+                  </li>
+                </ul>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <a-radio-group
+                    v-model="schemaExampleType"
+                    type="button"
+                    size="small"
+                    aria-label="示例类型"
+                  >
+                    <a-radio value="get">GET 查询参数</a-radio>
+                    <a-radio value="post">POST 博查搜索</a-radio>
+                  </a-radio-group>
+                  <a-button size="small" html-type="button" @click="copySchemaExample"
+                    >复制示例</a-button
+                  >
+                </div>
+                <p v-if="schemaExampleType === 'get'" class="mb-2">
+                  此为格式示例，请替换服务地址、路径和参数后使用。
+                </p>
+                <div v-else class="mb-2 break-words">
+                  <p>在下方 Headers 单独添加两行（密钥替换为你的博查 API Key）：</p>
+                  <p><code>Authorization: Bearer 你的博查APIKey</code>（Bearer 后有一个空格）</p>
+                  <p><code>Content-Type: application/json</code></p>
+                </div>
+                <pre
+                  class="max-h-64 overflow-auto rounded border border-gray-200 bg-white p-3 text-xs leading-5 select-text"
+                  tabindex="0"
+                  aria-label="可复制的 Schema 示例"
+                ><code>{{ schemaExample }}</code></pre>
+                <p class="mt-2">
+                  复制示例不会替换当前输入。保存时仅校验配置格式，实际调用需在应用中调试。
+                </p>
+              </div>
+              <a-textarea
+                v-model="form.openapi_schema"
+                :auto-size="{ minRows: 4, maxRows: 6 }"
+                placeholder="在此处输入您的 OpenAPI Schema"
+                @blur="validateSchema()"
+              />
+            </div>
           </a-form-item>
           <a-form-item label="可用工具">
             <!-- 可用工具表格 -->

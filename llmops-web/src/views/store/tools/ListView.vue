@@ -138,7 +138,7 @@ onMounted(async () => {
       <!-- 卡片抽屉 -->
       <a-drawer
         :visible="showIdx != -1"
-        :width="350"
+        :width="650"
         :footer="false"
         title="工具详情"
         :drawer-style="{ background: '#F9FAFB' }"

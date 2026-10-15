@@ -42,7 +42,7 @@ const openSummaryModal = async () => {
     </div>
     <!-- 长期记忆模态窗 -->
     <a-modal
-      :width="520"
+      :width="620"
       v-model:visible="summaryModalVisible"
       hide-title
       :footer="false"

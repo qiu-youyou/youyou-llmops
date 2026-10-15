@@ -77,7 +77,7 @@ watch(
 
 <template>
   <a-modal
-    :width="520"
+    :width="620"
     :visible="props.visible"
     hide-title
     :footer="false"
